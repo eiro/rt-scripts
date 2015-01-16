@@ -1,0 +1,76 @@
+divert(-1) 
+
+this file is mixing markdown documentations and m4 definitions.
+
+# TODO
+
+* complains loudly when variables not set
+* _DO_NOT_EDIT_WARNING_ must name the input file ? 
+
+# DOCUMENTATION
+
+those macros have to be set when running this file
+
+* _MAILGATE_BIN_ = path to the rt-mailgate 
+* _MAILGATE_URL_ = url  to the rt  
+* _MAILGATE_DOM_ = addr domains
+
+this file defines macros that ease the production of email aliases
+to contact mailgates.
+
+# DESIGN NOTES: 
+
+* why not tt2 or erb or (the template engine for python afficionados)? because we don't need them!
+  (if we need some of them at some point, maybe use mason because it's the
+  template engine used by rt. and yes: i don't give a shit about chef!)
+
+# M4 DEFINITIONS
+
+changequote([,])
+define(_DO_NOT_EDIT_WARNING_,[
+# /!\ this file or section was generated with rt-mailgate-aliases.
+#     PLEASE DO NOT EDIT MANUALLY AND READ THE DOC
+])
+
+##  rt_mailgate
+
+create a new alias to the mailgate with
+    $1 : email address of the alias
+    $2 : action to perform (comment, correspond, ...)
+    $3 : the queue where the action takes place
+
+define(rt_mailgate,$1[[]ifdef([_MAILGATE_DOM_],@_MAILGATE_DOM_)]: "|_MAILGATE_BIN_ \
+    --debug \
+    --action $2 \
+    --queue  $3 \
+    --url _MAILGATE_URL_")
+
+## rt_correspond and rt_comment
+
+those are just wrappers around rt_mailgate with the name of the action to perform. please see rt_mailgate definition/doc.
+
+define(rt_correspond,[rt_mailgate($1,correspond,$2)])
+define(rt_comment,[rt_mailgate($1-comment,comment,$2)])
+
+# rt_queue
+
+basically, a queue is a default addr with 
+
+rt_queue creates both corresponding and comment aliases for the same queue.
+    $1 : address prefix (used as it for the correspond command)
+    $2 : the name of the queue
+
+define(rt_queue,[
+rt_correspond($1,$2)
+
+rt_comment($1,$2)
+])
+
+define([rt_domain],[define([_MAILGATE_DOM_],$1)] 
+) 
+
+divert(0)dnl
+
+
+
+
